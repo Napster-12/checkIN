@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card auth-card">
+      <div class="card-body">
+        <h4 class="card-title text-center mb-3">Register Employee</h4>
+        <form method="POST" action="{{ url_for('register') }}">
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input name="fullname" class="form-control" placeholder="Name Surname" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <!-- ✅ Added placeholder hint -->
+            <input name="email" type="email" class="form-control"
+                   placeholder="name.surname@tekete.co.za" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input name="password" type="password" class="form-control" placeholder="Enter password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <input name="confirm" type="password" class="form-control" placeholder="Confirm password" required>
+          </div>
+          <button class="btn brand-btn w-100" type="submit">Register</button>
+        </form>
+        <div class="text-center mt-3 small">
+          Already have an account? <a href="{{ url_for('login') }}">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

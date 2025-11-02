@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moepi Attendance Dashboard</title>
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Poppins', sans-serif;
+      color: #1E2A38;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    header h3 {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+    }
+
+    .btn-logout {
+      padding: 10px 25px;
+      border-radius: 30px;
+      font-weight: 600;
+      border: 2px solid #D6E03F;
+      cursor: pointer;
+      background-color: #D6E03F;
+      color: #1E2A38;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    .btn-logout:hover {
+      background-color: #c4d238;
+      transform: translateY(-2px);
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      border: 2px solid #D6E03F;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      padding: 25px;
+      margin-bottom: 30px;
+    }
+
+    .slot-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      text-align: center;
+      border: 2px solid #D6E03F;
+      box-shadow: 0 5px 18px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
+    }
+
+    .slot-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.1);
+    }
+
+    h5 {
+      font-weight: 600;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+
+    h6 {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      padding: 8px;
+      resize: none;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 30px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-brand {
+      background-color: #D6E03F;
+      color: #1E2A38;
+    }
+
+    .btn-brand:hover {
+      background-color: #c4d238;
+      transform: translateY(-2px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+
+    table th, table td {
+      border: 1px solid #D6E03F;
+      padding: 10px;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #D6E03F;
+      color: #1E2A38;
+      font-weight: 600;
+    }
+
+    table tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+
+    table tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .text-success {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .text-muted {
+      color: #555;
+      font-size: 0.85rem;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .slot-card {
+        flex: 1 1 100% !important;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h3>Welcome, {{ current_user.fullname }}</h3>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+  </header>
+
+  <div class="card">
+    <h5>Today's Check-ins ({{ now.strftime('%Y-%m-%d') }})</h5>
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+      {% for slot, info in slot_states.items() %}
+        <div class="slot-card" style="flex: 1 1 calc(33% - 10px); min-width: 200px;">
+          <h6>{{ slot }}</h6>
+          {% if info.already %}
+            <p class="text-success">Checked in ✔️</p>
+            {% if info.comment %}
+              <p class="text-muted">Comment: {{ info.comment }}</p>
+            {% endif %}
+          {% else %}
+            <form method="POST" action="{{ url_for('checkin', slot=slot) }}">
+              <div style="margin-bottom: 10px;">
+                <textarea name="comment" rows="2" placeholder="What are you working on?" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-brand" style="width: 100%;">Check In</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h5>Recent Activity</h5>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time Slot</th>
+          <th>Comment</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ci in recent %}
+        <tr>
+          <td>{{ ci.date }}</td>
+          <td>{{ ci.slot }}</td>
+          <td>{{ ci.comment or '-' }}</td>
+          <td>{{ ci.timestamp.strftime('%H:%M:%S') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    © {{ current_year or "2025" }} Moepi Publishing — All Rights Reserved
+  </div>
+
+</body>
+</html>

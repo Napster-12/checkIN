@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4">Admin Analytics Dashboard</h2>
+
+  <!-- Filters -->
+  <form method="GET" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Filter by Employee</label>
+      <select class="form-select" name="name">
+        <option value="">All Employees</option>
+        {% for e in employees %}
+          <option value="{{ e.id }}" {% if e.id == name_filter|int %}selected{% endif %}>
+            {{ e.full_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Filter by Month</label>
+      <select class="form-select" name="month">
+        <option value="">All Months</option>
+        {% for m in range(1, 13) %}
+          <option value="{{ m }}" {% if month_filter|int == m %}selected{% endif %}>
+            {{ ["January","February","March","April","May","June","July","August","September","October","November","December"][m-1] }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4 align-self-end">
+      <button class="btn btn-primary w-100" type="submit">Apply Filters</button>
+    </div>
+  </form>
+
+  <!-- Dashboard Cards -->
+  <div class="row text-center mb-4">
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 rounded-3">
+        <h5>Total Check-Ins</h5>
+        <h3>{{ total_checkins }}</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 rounded-3">
+        <h5>Most Active Employee</h5>
+        <h4>{{ highest_checkin_employee or '—' }}</h4>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 rounded-3">
+        <h5>Earliest Check-In</h5>
+        <h4>{{ earliest_checkin.timestamp.strftime('%H:%M') if earliest_checkin and earliest_checkin.timestamp else '—' }}</h4>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 rounded-3">
+        <h5>Absent Days</h5>
+        <h4>{{ absent_days }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="row mb-5">
+    <div class="col-md-6">
+      <div class="card shadow-sm p-3 border-0 rounded-3">
+        <h6 class="fw-semibold text-center">Check-Ins by Month</h6>
+        <canvas id="checkinBarChart" height="200"></canvas>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm p-3 border-0 rounded-3">
+        <h6 class="fw-semibold text-center">Check-Ins by Employee</h6>
+        <canvas id="checkinPieChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-In List -->
+  <div class="card shadow-sm p-3 border-0 rounded-3 mb-4">
+    <h5>Recent Check-Ins</h5>
+    <table class="table table-striped mt-3">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Check-In Time</th>
+          <th>Date</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in checkins %}
+          <tr>
+            <td>{{ c.user.full_name }}</td>
+            <td>{{ c.timestamp.strftime('%H:%M') if c.timestamp else '—' }}</td>
+            <td>{{ c.timestamp.strftime('%Y-%m-%d') if c.timestamp else '—' }}</td>
+            <td>{{ c.comment or '' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <nav>
+      <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin_dashboard', page=pagination.prev_num) }}">Previous</a>
+          </li>
+        {% endif %}
+        {% for p in pagination.iter_pages() %}
+          {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('admin_dashboard', page=p) }}">{{ p }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin_dashboard', page=pagination.next_num) }}">Next</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<!-- PowerBI-style Charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const monthLabels = {{ month_labels|tojson }};
+  const monthCounts = {{ month_counts|tojson }};
+  const employeeNames = {{ employee_names|tojson }};
+  const employeeCounts = {{ employee_counts|tojson }};
+
+  // Bar chart: Check-Ins by Month
+  new Chart(document.getElementById("checkinBarChart"), {
+    type: "bar",
+    data: {
+      labels: monthLabels,
+      datasets: [{
+        label: "Check-Ins",
+        data: monthCounts,
+        backgroundColor: "rgba(54, 162, 235, 0.7)",
+        borderRadius: 8
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // Pie chart: Check-Ins by Employee
+  new Chart(document.getElementById("checkinPieChart"), {
+    type: "pie",
+    data: {
+      labels: employeeNames,
+      datasets: [{
+        data: employeeCounts,
+        backgroundColor: [
+          "#007bff","#28a745","#ffc107","#dc3545","#6610f2","#20c997","#fd7e14"
+        ]
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+  });
+});
+</script>
+{% endblock %}
